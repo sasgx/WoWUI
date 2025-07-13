@@ -1,0 +1,116 @@
+	--get the addon namespace
+	local addon, ns = ...
+
+	--object container
+	local cfg = {}
+	ns.cfg = cfg
+	
+	-- ConsolePort Bars
+	cfg.cp_bars = {
+		enable = true,
+		petRing = {
+			fadeIn = 1,
+			fadeOut = 0,
+		},
+	}
+	-- Blizzard Bars
+	cfg.bars = {
+		enable = true,
+		hide = {
+			BagsBar = true,
+		},		
+		mouseover = {
+			-- BagsBar = {
+				-- fadeIn = 1,
+				-- fadeOut = 0,
+			-- },
+			xpacButton = {
+				fadeIn = 1,
+				fadeOut = 0,
+			},
+			bar1 = {
+				fadeIn = 1,
+				fadeOut = 0,
+			},
+			bar2 = {
+				fadeIn = 1,
+				fadeOut = 0,
+			},
+			bar3 = {
+				fadeIn = 1,
+				fadeOut = 0,
+			},
+			bar4 = {
+				fadeIn = 1,
+				fadeOut = 0,
+			},
+			bar5 = {
+				fadeIn = 1,
+				fadeOut = 0,
+			},
+			bar6 = {
+				fadeIn = 1,
+				fadeOut = 0,
+			},
+			bar7 = {
+				fadeIn = 1,
+				fadeOut = 0,
+			},
+			bar8 = {
+				fadeIn = 1,
+				fadeOut = 0,
+			},
+			petBar = {
+				fadeIn = 0,
+				fadeOut = 0,			
+			},
+		}
+	}
+	
+	-- Blizzard PlayerFrame
+	cfg.player = {
+		enable = true,
+		fadeIn = 1,
+		fadeOut = 0,
+		combatFade = false,
+		move = {
+			enabled = true,
+			af = UIParent,
+			a1 = "BOTTOM",
+			a2 = "BOTTOM",
+			x = -310,
+			y = 200,		
+		},
+		pet = {
+			fadeIn = 0,
+			fadeOut = 0,
+		},
+	}
+	
+	-- Blizzard TargetFrame
+	cfg.target = {
+		enable = true,
+		fadeIn = 1,
+		fadeOut = 0,
+		move = {
+			enabled = true,
+			af = "PlayerFrame",
+			a1 = "LEFT",
+			a2 = "RIGHT",
+			x = 350,
+			y = 0,		
+		},
+	}
+	
+	-- Blizzard PartyFrame
+	cfg.party = {
+		enable = true,
+		move = {
+			enabled = false,
+			af = UIParent,
+			a1 = "BOTTOM",
+			a2 = "BOTTOM",
+			x = 0,
+			y = 200,
+		},
+	}

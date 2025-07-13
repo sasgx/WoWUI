@@ -1,0 +1,15 @@
+## Interface: 50500
+## Title: SasUI
+## Notes: 
+## RequiredDeps:
+## OptionalDeps: ConsolePort_Bar, GW2_UI
+
+func\funcs.lua
+
+chat.lua
+config.lua
+
+art\cp_bars.lua
+
+units\player.lua
+units\target.lua
