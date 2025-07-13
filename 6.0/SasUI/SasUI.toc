@@ -1,0 +1,41 @@
+## Interface: 60200
+## Author: Sas
+## Title: |c0000FFFFSas|r|cff9966ffUI|r
+## Notes: ActionBar, Minimap, UnitFrames and Chat for Blizzard UI
+## Version: 6.2.001
+## RequiredDeps: rLib, Blizzard_TimeManager, Blizzard_CombatText
+## LoadWith: Blizzard_CombatText
+## SavedVariables: SasUIGlobalConfig
+## SavedVariablesPerCharacter: SasUIConfig
+
+rColors.lua
+config.lua
+charspecific.lua
+
+units\player.lua
+units\target.lua
+units\focus.lua
+units\expbar.lua
+units\repbar.lua
+units\bars.lua
+units\castbar.lua
+
+paint.lua
+
+AddOns\rActionBarStyler\rActionBarStyler.xml
+AddOns\rActionButtonStyler\rActionButtonStyler.xml
+#AddOns\rBuffFrameStyler\rBuffFrameStyler.xml
+AddOns\rChat\rChat.xml
+AddOns\rCombatText\rCombatText.xml
+AddOns\rDamageFont\rDamageFont.xml
+AddOns\rError\rError.xml
+AddOns\rInfostrings\rInfostrings.xml
+AddOns\rMinimap\rMinimap.xml
+AddOns\rPlayerPowerBarAlt\rPlayerPowerBarAlt.xml
+
+AddOns\DKimproved\DKimproved.xml
+AddOns\ncImprovedMerchant\ncImprovedMerchant.xml
+AddOns\SpellAlertTimer\SpellAlertTimer.xml
+AddOns\tullaRange\tullaRange.xml
+AddOns\xanAutoMail\xanAutoMail.xml
+AddOns\xCT\xCT.xml

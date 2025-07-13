@@ -1,0 +1,10 @@
+## Interface: 60000
+## Title: DKimproved
+## Notes: Soul Reaper Notification and Death Knight Sounds
+## Author: Sas
+## Version: 1.0
+
+config.lua
+
+soulreaper.lua
+sounds.lua

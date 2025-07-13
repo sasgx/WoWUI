@@ -1,0 +1,1 @@
+DAMAGE_TEXT_FONT = "Interface\\AddOns\\SasUI\\media\\Fonts\\DAMAGE.ttf"
