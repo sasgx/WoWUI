@@ -6,10 +6,13 @@
 
 func\funcs.lua
 
-chat.lua
+rChat.lua
+rTooltip.lua
 config.lua
 
 art\cp_bars.lua
 
 units\player.lua
 units\target.lua
+units\bars.lua
+units\party.lua

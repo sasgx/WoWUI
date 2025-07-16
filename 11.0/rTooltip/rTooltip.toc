@@ -1,6 +1,0 @@
-## Interface: 110107
-## Author: zork
-## Title: rTooltip |cffff6600TheWarWithin|r
-## Notes: Tooltip enhancements
-
-core.lua

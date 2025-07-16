@@ -114,3 +114,8 @@
 			y = 200,
 		},
 	}
+	
+	-- -- Blizzard Frames ( Character Menu )
+	-- cfg.blizz = {
+		-- enable = true,
+	-- }

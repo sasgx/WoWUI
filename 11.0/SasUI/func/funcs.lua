@@ -4,6 +4,11 @@
 	-- Create addon namespace
 	ns.SasUI = ns.SasUI or {}
 	local SasUI = ns.SasUI
+	
+	-- Function to check if a frame exists
+	local function FrameExists(frameName)
+		return _G[frameName] ~= nil
+	end
 
 	-- Universal function for texture paths
 	function SasUI.Textures(filename)
@@ -29,13 +34,15 @@
 		end
 		isActionBar = isActionBar or false -- Default to false if not provided
 
-		-- Get the frame
-		local frame = _G[frameName]
-		if not frame then
+		-- Check if the frame exists
+		if not FrameExists(frameName) then
 			C_Timer.After(1, function() SasUI.Mouseover(frameName, alphaOnEnter, alphaOnLeave, isActionBar) end)
 			print(addon .. ": Frame " .. frameName .. " not found to add mouseover.")
 			return
 		end
+
+		-- Get the frame
+		local frame = _G[frameName]
 
 		-- Initialize frame
 		frame:SetAlpha(alphaOnLeave)
@@ -72,77 +79,7 @@
 			end
 		end
 	end
-
---[[	
-	-- Mouseover effect for UI frames with delayed fade
-	function SasUI.Mouseover(frameName, alphaOnEnter, alphaOnLeave)
-		-- Validate inputs
-		if type(frameName) ~= "string" then
-			print(addon .. ": Mouseover requires a string frameName.")
-			return
-		end
-		alphaOnEnter = tonumber(alphaOnEnter) or 1.0
-		alphaOnLeave = tonumber(alphaOnLeave) or 0.2
-		if alphaOnEnter < 0 or alphaOnEnter > 1 or alphaOnLeave < 0 or alphaOnLeave > 1 then
-			print(addon .. ": Alpha values must be between 0 and 1.")
-			return
-		end
-
-		-- Get the frame
-		local frame = _G[frameName]
-		if frame then
-			frame:SetAlpha(alphaOnLeave)
-			frame:SetScript("OnEnter", function(self)
-				self:SetAlpha(alphaOnEnter)
-				self:SetScript("OnUpdate", nil) -- Clear any OnUpdate from OnLeave
-			end)
-			frame:SetScript("OnLeave", function(self)
-				-- Set OnUpdate to check if mouse is still over before fading
-				self:SetScript("OnUpdate", function(self)
-					if not self:IsMouseOver() then
-						self:SetScript("OnUpdate", nil)
-						self:SetAlpha(alphaOnLeave)
-					end
-				end)
-			end)
-		else
-			C_Timer.After(1, function() SasUI.Mouseover(frameName, alphaOnEnter, alphaOnLeave) end)
-			print(addon .. ": Frame " .. frameName .. " not found to add mouseover.")
-		end
-	end
 	
-	-- FadeIn/FadeOut buttons in a bar
-	function SasUI.BarMouseover(barName,alphaOnEnter, alphaOnLeave)
-		local bar = _G[barName]
-		
-		if not bar then
-			print("Bar " .. barName .. " not found.")
-			return
-		end
-		
-		bar:SetAlpha(alphaOnLeave)
-
-		bar:EnableMouse(true)
-		bar:HookScript("OnEnter", function()
-			bar:SetAlpha(alphaOnEnter)
-		end)
-		bar:HookScript("OnLeave", function()
-			bar:SetAlpha(alphaOnLeave)
-		end)
-
-		for i = 1, 12 do
-			local button = _G[barName.."Button"..i]
-			if button then
-				button:HookScript("OnEnter", function()
-					bar:SetAlpha(alphaOnEnter)
-				end)
-				button:HookScript("OnLeave", function()
-					bar:SetAlpha(alphaOnLeave)
-				end)
-			end
-		end
-	end
-]]--	
 	-- FadeIn/FadeOut based on Combat
 	function SasUI.CombatFader(frameName, alphaOnEnter, alphaOnLeave)
 		local f = CreateFrame("Frame")
@@ -183,6 +120,72 @@
 			print("Frame " .. frameName .. " not found to move it.")
 		end
 	end
+	
+	function SasUI.ResizeBlizzFrames(frameName, scale, addonName)
+		local frame = _G[frameName]
+		if frame then
+			-- Frame exists, apply scaling logic
+			if frame.SetScale then
+				frame:SetScale(scale)
+				--print("Initial scale applied to " .. frameName .. ": " .. scale)
+			end
+
+			-- Hook SetSize to detect size changes
+			hooksecurefunc(frame, "SetSize", function()
+				if frame.SetScale then
+					frame:SetScale(scale)
+					--print("Frame " .. frameName .. " resized and scaled to " .. scale)
+				end
+			end)
+
+			-- Hook SetScale to maintain desired scale
+			hooksecurefunc(frame, "SetScale", function()
+				if frame:GetScale() ~= scale then
+					frame:SetScale(scale)
+					--print("Frame " .. frameName .. " scale adjusted to " .. scale)
+				end
+			end)
+		else
+			-- Frame not found, set up event listener for ADDON_LOADED
+			local eventFrame = CreateFrame("Frame")
+			eventFrame:RegisterEvent("ADDON_LOADED")
+			eventFrame:SetScript("OnEvent", function(self, event, loadedAddon)
+				-- Check if the frame exists after any addon loads
+				local newFrame = _G[frameName]
+				if newFrame then
+					if newFrame.SetScale then
+						newFrame:SetScale(scale)
+						--print("Initial scale applied to " .. frameName .. " after addon " .. loadedAddon .. " loaded: " .. scale)
+					end
+
+					-- Hook SetSize
+					hooksecurefunc(newFrame, "SetSize", function()
+						if newFrame.SetScale then
+							newFrame:SetScale(scale)
+							--print("Frame " .. frameName .. " resized and scaled to " .. scale)
+						end
+					end)
+
+					-- Hook SetScale
+					hooksecurefunc(newFrame, "SetScale", function()
+						if newFrame:GetScale() ~= scale then
+							newFrame:SetScale(scale)
+							--print("Frame " .. frameName .. " scale adjusted to " .. scale)
+						end
+					end)
+
+					-- Unregister event to clean up
+					self:UnregisterEvent("ADDON_LOADED")
+				elseif addonName and loadedAddon == addonName then
+					-- If specific addon was provided but frame still not found, warn and clean up
+					--print("Frame " .. frameName .. " not found even after addon " .. loadedAddon .. " loaded.")
+					self:UnregisterEvent("ADDON_LOADED")
+				end
+			end)
+			--print("Frame " .. frameName .. " not found, waiting for addon to load.")
+		end
+	end
+	
 	-----------------------------
 	-- Paint Textures
 	-----------------------------
@@ -301,6 +304,77 @@
 		else
 			C_Timer.After(1, function() SasUI.Mouseover(frameName, alphaOnEnter, alphaOnLeave) end)
 			print(addon .. ": Frame " .. frameName .. " not found to add mouseover.")
+		end
+	end
+]]--
+
+--[[	
+	-- Mouseover effect for UI frames with delayed fade
+	function SasUI.Mouseover(frameName, alphaOnEnter, alphaOnLeave)
+		-- Validate inputs
+		if type(frameName) ~= "string" then
+			print(addon .. ": Mouseover requires a string frameName.")
+			return
+		end
+		alphaOnEnter = tonumber(alphaOnEnter) or 1.0
+		alphaOnLeave = tonumber(alphaOnLeave) or 0.2
+		if alphaOnEnter < 0 or alphaOnEnter > 1 or alphaOnLeave < 0 or alphaOnLeave > 1 then
+			print(addon .. ": Alpha values must be between 0 and 1.")
+			return
+		end
+
+		-- Get the frame
+		local frame = _G[frameName]
+		if frame then
+			frame:SetAlpha(alphaOnLeave)
+			frame:SetScript("OnEnter", function(self)
+				self:SetAlpha(alphaOnEnter)
+				self:SetScript("OnUpdate", nil) -- Clear any OnUpdate from OnLeave
+			end)
+			frame:SetScript("OnLeave", function(self)
+				-- Set OnUpdate to check if mouse is still over before fading
+				self:SetScript("OnUpdate", function(self)
+					if not self:IsMouseOver() then
+						self:SetScript("OnUpdate", nil)
+						self:SetAlpha(alphaOnLeave)
+					end
+				end)
+			end)
+		else
+			C_Timer.After(1, function() SasUI.Mouseover(frameName, alphaOnEnter, alphaOnLeave) end)
+			print(addon .. ": Frame " .. frameName .. " not found to add mouseover.")
+		end
+	end
+	
+	-- FadeIn/FadeOut buttons in a bar
+	function SasUI.BarMouseover(barName,alphaOnEnter, alphaOnLeave)
+		local bar = _G[barName]
+		
+		if not bar then
+			print("Bar " .. barName .. " not found.")
+			return
+		end
+		
+		bar:SetAlpha(alphaOnLeave)
+
+		bar:EnableMouse(true)
+		bar:HookScript("OnEnter", function()
+			bar:SetAlpha(alphaOnEnter)
+		end)
+		bar:HookScript("OnLeave", function()
+			bar:SetAlpha(alphaOnLeave)
+		end)
+
+		for i = 1, 12 do
+			local button = _G[barName.."Button"..i]
+			if button then
+				button:HookScript("OnEnter", function()
+					bar:SetAlpha(alphaOnEnter)
+				end)
+				button:HookScript("OnLeave", function()
+					bar:SetAlpha(alphaOnLeave)
+				end)
+			end
 		end
 	end
 ]]--	
