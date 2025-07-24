@@ -9,9 +9,7 @@
 	-- Function to set up pet ring fading behavior
 	local function setupPetRingFading()
 		if UnitExists("pet") then
-			-- Apply combat and mouseover fading
-			ns.SasUI.CombatFader("ConsolePortBarPetRing", cfg.petRing.fadeIn or 1, cfg.petRing.fadeOut or 0)
-			ns.SasUI.Mouseover("ConsolePortBarPetRing", cfg.petRing.fadeIn or 1, cfg.petRing.fadeOut or 0)
+			ns.SasUI.Mouseover("ConsolePortBarPetRing", cfg.petRing.fadeIn or 1, cfg.petRing.fadeOut or 0, cfg.petRing.combatFade)
 		end
 	end	
 

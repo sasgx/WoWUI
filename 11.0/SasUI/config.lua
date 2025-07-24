@@ -11,6 +11,7 @@
 		petRing = {
 			fadeIn = 1,
 			fadeOut = 0,
+			combatFade = true,
 		},
 	}
 	-- Blizzard Bars
@@ -45,7 +46,7 @@
 				fadeOut = 0,
 			},
 			bar5 = {
-				fadeIn = 1,
+				fadeIn = 0,
 				fadeOut = 0,
 			},
 			bar6 = {
@@ -74,7 +75,7 @@
 		fadeOut = 0,
 		combatFade = false,
 		move = {
-			enabled = true,
+			enabled = false,
 			af = UIParent,
 			a1 = "BOTTOM",
 			a2 = "BOTTOM",
@@ -84,6 +85,7 @@
 		pet = {
 			fadeIn = 0,
 			fadeOut = 0,
+			combatFade = false,
 		},
 	}
 	
@@ -92,6 +94,7 @@
 		enable = true,
 		fadeIn = 1,
 		fadeOut = 0,
+		combatFade = false,
 		move = {
 			enabled = true,
 			af = "PlayerFrame",
@@ -115,7 +118,7 @@
 		},
 	}
 	
-	-- -- Blizzard Frames ( Character Menu )
-	-- cfg.blizz = {
-		-- enable = true,
-	-- }
+	-- Blizzard Frames ( Character Menu )
+	cfg.blizz = {
+		enable = true,
+	}

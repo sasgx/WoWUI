@@ -1,26 +1,109 @@
-	-- func/funcs.lua
 	local addon, ns = ...
 
 	-- Create addon namespace
 	ns.SasUI = ns.SasUI or {}
 	local SasUI = ns.SasUI
-	
+
+	-- Variables
+	local SpellFlyout = SpellFlyout
+	local NUM_ACTIONBAR_BUTTONS = 12
+	local registeredFrames = {} -- Table to track all frames with mouseover
+	local combatFrames = {} -- Table to track frames with combat fading enabled
+
 	-- Function to check if a frame exists
 	local function FrameExists(frameName)
 		return _G[frameName] ~= nil
 	end
 
-	-- Universal function for texture paths
-	function SasUI.Textures(filename)
-		if type(filename) ~= "string" then
-			print(addon .. ": sgTextures requires a string filename.")
-			return
-		end
-		return "Interface\\AddOns\\" .. addon .. "\\media\\" .. filename
+	-- Function to safely check if a frame is valid for mouseover
+	local function IsValidFrame(frame)
+		return type(frame) == "table" and frame.GetObjectType and frame:IsObjectType("Frame") and frame.IsMouseOver
 	end
-	
-	-- Mouseover effect for UI frames or action bars with delayed fade
-	function SasUI.Mouseover(frameName, alphaOnEnter, alphaOnLeave, isActionBar)
+
+	-- Function called when fade animation finishes
+	local function FaderOnFinished(self)
+		self.__owner:SetAlpha(self.finAlpha)
+	end
+
+	-- Create fade animation for a frame
+	local function CreateFadeAnimation(frame, fadeIn, duration, fromAlpha, toAlpha)
+		if not frame.__fader then
+			frame.__fader = frame:CreateAnimationGroup()
+			frame.__fader.__owner = frame
+			frame.__fader.anim = frame.__fader:CreateAnimation("Alpha")
+			frame.__fader:HookScript("OnFinished", FaderOnFinished)
+		end
+		frame.__fader:Stop()
+		frame.__fader.anim:SetFromAlpha(fromAlpha)
+		frame.__fader.anim:SetToAlpha(toAlpha)
+		frame.__fader.anim:SetDuration(duration)
+		frame.__fader.anim:SetSmoothing(fadeIn and "IN" or "OUT")
+		frame.__fader.finAlpha = toAlpha
+		frame.__fader.direction = fadeIn and "in" or "out"
+		frame.__fader:Play()
+	end
+
+	-- Check if mouse is over frame or its flyout
+	local function IsMouseOverFrame(frame)
+		if not IsValidFrame(frame) then return false end
+		if frame:IsMouseOver() then return true end
+		if not SpellFlyout or not SpellFlyout:IsShown() then return false end
+		if not IsValidFrame(SpellFlyout) then return false end
+		if SpellFlyout.__faderParent == frame and SpellFlyout:IsMouseOver() then return true end
+		return false
+	end
+
+	-- Frame handler for fading based on combat, mouseover, or Alt key
+	local function FrameHandler(frame)
+		if not IsValidFrame(frame) or not frame.__faderConfig then return end
+		if frame.__faderConfig.isCombatFader and UnitAffectingCombat("player") then
+			-- In combat: force fade in
+			CreateFadeAnimation(frame, true, frame.__faderConfig.fadeInDuration or 0.3, frame:GetAlpha(), frame.__faderConfig.fadeInAlpha or 1)
+		elseif IsAltKeyDown() then
+			-- Alt is held: force fade in
+			CreateFadeAnimation(frame, true, frame.__faderConfig.fadeInDuration or 0.3, frame:GetAlpha(), frame.__faderConfig.fadeInAlpha or 1)
+		elseif IsMouseOverFrame(frame) then
+			-- Mouseover: fade in
+			CreateFadeAnimation(frame, true, frame.__faderConfig.fadeInDuration or 0.3, frame:GetAlpha(), frame.__faderConfig.fadeInAlpha or 1)
+		else
+			-- No mouseover, Alt not held, not in combat: fade out
+			CreateFadeAnimation(frame, false, frame.__faderConfig.fadeOutDuration or 0.3, frame:GetAlpha(), frame.__faderConfig.fadeOutAlpha or 0.2)
+		end
+	end
+
+	-- Handler for buttons or flyout frames
+	local function OffFrameHandler(self)
+		if not self.__faderParent then return end
+		FrameHandler(self.__faderParent)
+	end
+
+	-- Handle SpellFlyout show event
+	local function SpellFlyoutOnShow(self)
+		local frame = self:GetParent() and self:GetParent():GetParent() and self:GetParent():GetParent():GetParent()
+		if not frame or not frame.__fader then return end
+		self.__faderParent = frame
+		if not self.__faderHook then
+			SpellFlyout:HookScript("OnEnter", OffFrameHandler)
+			SpellFlyout:HookScript("OnLeave", OffFrameHandler)
+			self.__faderHook = true
+		end
+		for i = 1, NUM_ACTIONBAR_BUTTONS do
+			local button = _G["SpellFlyoutButton" .. i]
+			if not button then break end
+			button.__faderParent = frame
+			if not button.__faderHook then
+				button:HookScript("OnEnter", OffFrameHandler)
+				button:HookScript("OnLeave", OffFrameHandler)
+				button.__faderHook = true
+			end
+		end
+	end
+	if SpellFlyout then
+		SpellFlyout:HookScript("OnShow", SpellFlyoutOnShow)
+	end
+
+	-- Main Mouseover function
+	function SasUI.Mouseover(frameName, alphaOnEnter, alphaOnLeave, isCombatFader, isActionBar)
 		-- Validate inputs
 		if type(frameName) ~= "string" then
 			print(addon .. ": Mouseover requires a string frameName.")
@@ -32,80 +115,100 @@
 			print(addon .. ": Alpha values must be between 0 and 1.")
 			return
 		end
-		isActionBar = isActionBar or false -- Default to false if not provided
+		isActionBar = isActionBar or false
+		isCombatFader = isCombatFader or false
 
 		-- Check if the frame exists
 		if not FrameExists(frameName) then
-			C_Timer.After(1, function() SasUI.Mouseover(frameName, alphaOnEnter, alphaOnLeave, isActionBar) end)
+			C_Timer.After(1, function() SasUI.Mouseover(frameName, alphaOnEnter, alphaOnLeave, isCombatFader, isActionBar) end)
 			print(addon .. ": Frame " .. frameName .. " not found to add mouseover.")
 			return
 		end
 
 		-- Get the frame
 		local frame = _G[frameName]
+		if not IsValidFrame(frame) then
+			print(addon .. ": Frame " .. frameName .. " is not a valid frame for mouseover.")
+			return
+		end
 
-		-- Initialize frame
+		-- Initialize fader config
+		frame.__faderConfig = {
+			fadeInAlpha = alphaOnEnter,
+			fadeOutAlpha = alphaOnLeave,
+			fadeInDuration = 1,
+			fadeOutDuration = 1,
+			isCombatFader = isCombatFader
+		}
+
+		-- Set initial alpha
 		frame:SetAlpha(alphaOnLeave)
 		if isActionBar then
 			frame:EnableMouse(true)
 		end
 
-		-- Define mouseover behavior
-		local function applyMouseoverScripts(target)
-			target:HookScript("OnEnter", function(self)
-				frame:SetAlpha(alphaOnEnter)
-				frame:SetScript("OnUpdate", nil) -- Clear any OnUpdate from OnLeave
-			end)
-			target:HookScript("OnLeave", function(self)
-				frame:SetScript("OnUpdate", function()
-					if not frame:IsMouseOver() then
-						frame:SetScript("OnUpdate", nil)
-						frame:SetAlpha(alphaOnLeave)
-					end
-				end)
-			end)
-		end
+		-- Create fade animation
+		CreateFadeAnimation(frame, false, 0, alphaOnLeave, alphaOnLeave)
 
-		-- Apply to the frame itself
-		applyMouseoverScripts(frame)
+		-- Apply mouseover scripts to frame
+		frame:HookScript("OnEnter", FrameHandler)
+		frame:HookScript("OnLeave", FrameHandler)
 
-		-- If it's an action bar, apply to buttons (1-12)
+		-- If action bar, apply to buttons
 		if isActionBar then
-			for i = 1, 12 do
+			for i = 1, NUM_ACTIONBAR_BUTTONS do
 				local button = _G[frameName .. "Button" .. i]
-				if button then
-					applyMouseoverScripts(button)
+				if button and IsValidFrame(button) then
+					button.__faderParent = frame
+					if not button.__faderHook then
+						button:HookScript("OnEnter", OffFrameHandler)
+						button:HookScript("OnLeave", OffFrameHandler)
+						button.__faderHook = true
+					end
 				end
 			end
 		end
-	end
-	
-	-- FadeIn/FadeOut based on Combat
-	function SasUI.CombatFader(frameName, alphaOnEnter, alphaOnLeave)
-		local f = CreateFrame("Frame")
-		f:RegisterEvent("PLAYER_REGEN_DISABLED")
-		f:RegisterEvent("PLAYER_REGEN_ENABLED")
 
-		local frame = _G[frameName]
-		if frame then
-			-- Set the frame to be invisible initially
-			frame:SetAlpha(alphaOnLeave)
-			
-			f:SetScript("OnEvent", function(self, event)
-				-- Set the frame to be visible when in combat
-				if event == "PLAYER_REGEN_DISABLED" then
-					frame:SetAlpha(alphaOnEnter)
-				-- Set the frame to be invisible when combat ends
-				elseif event == "PLAYER_REGEN_ENABLED" then
-					frame:SetAlpha(alphaOnLeave)
-				end
-			end)
-		else			-- If the frame is not found, delay the movement until it's created
-			C_Timer.After(1, function() SetFrameAlphaByCombatStatus(frameName, alphaOnEnter, alphaOnLeave) end)
-			print("Frame " .. frameName .. " not found to change alpha based on combat state.")
+		-- Track all registered frames and combat fader frames
+		registeredFrames[frameName] = frame
+		if isCombatFader then
+			combatFrames[frameName] = frame
 		end
+
+		-- Initial frame handler call
+		FrameHandler(frame)
 	end
-	
+
+	-- Update frame states on modifier key or combat change
+	local updateFrame = CreateFrame("Frame")
+	updateFrame:RegisterEvent("MODIFIER_STATE_CHANGED")
+	updateFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+	updateFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+	updateFrame:SetScript("OnEvent", function(self, event, key, state)
+		if event == "MODIFIER_STATE_CHANGED" and (key == "RALT") then
+			for frameName, frame in pairs(registeredFrames) do
+				if IsValidFrame(frame) and frame.__faderConfig then
+					FrameHandler(frame)
+				end
+			end
+		elseif event == "PLAYER_REGEN_DISABLED" or event == "PLAYER_REGEN_ENABLED" then
+			for frameName, frame in pairs(combatFrames) do
+				if IsValidFrame(frame) and frame.__faderConfig then
+					FrameHandler(frame)
+				end
+			end
+		end
+	end)
+
+	-- Universal function for texture paths
+	function SasUI.Textures(filename)
+		if type(filename) ~= "string" then
+			print(addon .. ": Textures requires a string filename.")
+			return
+		end
+		return "Interface\\AddOns\\" .. addon .. "\\media\\" .. filename
+	end
+
 	-- Define your function to move UI frames
 	function SasUI.Move(frameName, point, relativeTo, relativePoint, offsetX, offsetY)
 		-- Get the frame using its name
@@ -113,28 +216,27 @@
 		if frame then
 			-- Move the frame
 			frame:ClearAllPoints()
-			frame:SetPoint(point, relativeTo, relativePoint, offsetX, offsetY)		
+			frame:SetPoint(point, relativeTo, relativePoint, offsetX, offsetY)
 		else
 			-- If the frame is not found, delay the movement until it's created
-			C_Timer.After(1, function() MoveUIFrames(frameName, point, relativeTo, relativePoint, offsetX, offsetY) end)
+			C_Timer.After(1, function() SasUI.Move(frameName, point, relativeTo, relativePoint, offsetX, offsetY) end)
 			print("Frame " .. frameName .. " not found to move it.")
 		end
 	end
-	
+
+	-- Resize Blizzard frames
 	function SasUI.ResizeBlizzFrames(frameName, scale, addonName)
 		local frame = _G[frameName]
 		if frame then
 			-- Frame exists, apply scaling logic
 			if frame.SetScale then
 				frame:SetScale(scale)
-				--print("Initial scale applied to " .. frameName .. ": " .. scale)
 			end
 
 			-- Hook SetSize to detect size changes
 			hooksecurefunc(frame, "SetSize", function()
 				if frame.SetScale then
 					frame:SetScale(scale)
-					--print("Frame " .. frameName .. " resized and scaled to " .. scale)
 				end
 			end)
 
@@ -142,7 +244,6 @@
 			hooksecurefunc(frame, "SetScale", function()
 				if frame:GetScale() ~= scale then
 					frame:SetScale(scale)
-					--print("Frame " .. frameName .. " scale adjusted to " .. scale)
 				end
 			end)
 		else
@@ -155,14 +256,12 @@
 				if newFrame then
 					if newFrame.SetScale then
 						newFrame:SetScale(scale)
-						--print("Initial scale applied to " .. frameName .. " after addon " .. loadedAddon .. " loaded: " .. scale)
 					end
 
 					-- Hook SetSize
 					hooksecurefunc(newFrame, "SetSize", function()
 						if newFrame.SetScale then
 							newFrame:SetScale(scale)
-							--print("Frame " .. frameName .. " resized and scaled to " .. scale)
 						end
 					end)
 
@@ -170,7 +269,6 @@
 					hooksecurefunc(newFrame, "SetScale", function()
 						if newFrame:GetScale() ~= scale then
 							newFrame:SetScale(scale)
-							--print("Frame " .. frameName .. " scale adjusted to " .. scale)
 						end
 					end)
 
@@ -178,21 +276,15 @@
 					self:UnregisterEvent("ADDON_LOADED")
 				elseif addonName and loadedAddon == addonName then
 					-- If specific addon was provided but frame still not found, warn and clean up
-					--print("Frame " .. frameName .. " not found even after addon " .. loadedAddon .. " loaded.")
 					self:UnregisterEvent("ADDON_LOADED")
 				end
 			end)
-			--print("Frame " .. frameName .. " not found, waiting for addon to load.")
 		end
 	end
-	
-	-----------------------------
-	-- Paint Textures
-	-----------------------------
-	
+
 	-- Set the textures to be class colored
 	local ClassColored = true
-	
+
 	rRAID_CLASS_COLORS = {
 		["HUNTER"] = { r = 0.67, g = 0.83, b = 0.45 },
 		["WARLOCK"] = { r = 0.58, g = 0.51, b = 0.79 },
@@ -204,20 +296,19 @@
 		["SHAMAN"] = { r = 0.0, g = 0.44, b = 0.87 },
 		["WARRIOR"] = { r = 0.78, g = 0.61, b = 0.43 },
 		["DEATHKNIGHT"] = { r = 0.77, g = 0.12, b = 0.23 },
-		["MONK"] = { r = 0, g = 1.0, b = 0.57 },
+		["MONK"] = { r = 0.0, g = 1.0, b = 0.57 },
 		["DEMONHUNTER"] = { r = 0.64, g = 0.19, b = 0.79 },
 		["EVOKER"] = { r = 0.2, g = 0.58, b = 0.5 },
 	}
-			
-	local cc = CUSTOM_CLASS_COLORS and CUSTOM_CLASS_COLORS[select(2, UnitClass("player"))] or rRAID_CLASS_COLORS[select(2, UnitClass("player"))] or  { r=0.5, g=0.5, b=0.5 }
-		
+
+	local cc = CUSTOM_CLASS_COLORS and CUSTOM_CLASS_COLORS[select(2, UnitClass("player"))] or rRAID_CLASS_COLORS[select(2, UnitClass("player"))] or { r=0.5, g=0.5, b=0.5 }
+
 	local function PaintTextures()
 		local cl = ClassColored == true
 		local r1, g1, b1, a1 = 1, 1, 1, 1 -- top color
 		local r2, g2, b2, a2 = cl and cc.r or 0.58, cl and cc.g or 0.51, cl and cc.b or 0.79, 1 -- bottom color
 
-		for i,v in pairs({
-			
+		for i, v in pairs({
 			-- Minimap
 			MinimapCompassTexture,
 			Minimap.ZoomIn:GetRegions(),
@@ -225,156 +316,65 @@
 
 			-- Menus
 			FriendsFrame:GetRegions(),
-			CharacterFrame:GetRegions(),			
-
+			CharacterFrame:GetRegions(),
 		}) do
-			if v:GetObjectType() == "Texture" then
+			if v and v:GetObjectType() == "Texture" then
 				v:SetVertexColor(1, 1, 1)
 				v:SetDesaturated(1)
 				v:SetVertexColor(r2, g2, b2)
 			end
 		end
-		
 	end
 	PaintTextures()
 	
-	
---[[	
-	-- Helper function to apply mouseover fade behavior to any frame
-	function SasUI.Mouseover(frameName, alphaOnEnter, alphaOnLeave)
-		local frame = _G[frameName]
-		-- Ensure the frame exists and is valid
-		if not frame or not frame.HookScript then
-			print(addon .. ": Mouseover requires a valid frameName.")
-			return
-		end
-		
-		-- Validate inputs
-		if type(frame) ~= "string" then
-			print(addon .. ": Mouseover requires a string frameName.")
-			return
-		end
-		
-		-- Set frame alpha on login
-		frame:SetAlpha(alphaOnLeave)
-		
-		-- Function to handle fading when the mouse leaves
-		local function WaitForMouseToGoAway(self)
-			if not self:IsMouseOver() then
-				self:SetScript("OnUpdate", nil)
-				self:SetAlpha(alphaOnLeave)
-			end
-		end
+-- Hide Blizzard buff frame by default until arrow is clicked
+local function HideBuffFrameByDefault()
+    local maxRetries = 5
+    local retryCount = 0
 
-		-- Hook OnEnter to show the frame
-		frameName:HookScript("OnEnter", function(self)
-			self:SetAlpha(alphaOnEnter)
-		end)
+    local function CollapseBuffFrame()
+        if BuffFrame and BuffFrame.CollapseAndExpandButton and BuffFrame.AuraContainer then
+            if not BuffFrame.isCollapsed then
+                -- Simulate a secure click to collapse the buff frame using Blizzard's logic
+                BuffFrame.CollapseAndExpandButton:Click()
+                -- Check if collapse worked after a short delay
+                C_Timer.After(0.5, function()
+                    if BuffFrame and not BuffFrame.isCollapsed and retryCount < maxRetries then
+                        retryCount = retryCount + 1
+                        CollapseBuffFrame()
+                    end
+                end)
+            end
+            -- Hook the CollapseAndExpandButton's OnClick to debug toggle behavior
+            if not BuffFrame.CollapseAndExpandButton.__sasUIHooked then
+                hooksecurefunc(BuffFrame.CollapseAndExpandButton, "OnClick", function(self)
+                    print("BuffFrame arrow clicked, isCollapsed:", BuffFrame.isCollapsed, "AuraContainer visible:", BuffFrame.AuraContainer:IsVisible())
+                end)
+                BuffFrame.CollapseAndExpandButton.__sasUIHooked = true
+            end
+        elseif retryCount < maxRetries then
+            -- Retry after a delay if BuffFrame or its components aren't ready
+            retryCount = retryCount + 1
+            C_Timer.After(2, CollapseBuffFrame)
+        end
+    end
 
-		-- Hook OnLeave to start fading
-		frameName:HookScript("OnLeave", function(self)
-			self:SetScript("OnUpdate", WaitForMouseToGoAway)
-		end)
-	end
+    -- Run on initial load with a delay to ensure UI is ready
+    C_Timer.After(0.2, CollapseBuffFrame)
 
-	-- Mouseover effect for UI frames
-	function SasUI.Mouseover(frameName, alphaOnEnter, alphaOnLeave)
-		-- Validate inputs
-		if type(frameName) ~= "string" then
-			print(addon .. ": Mouseover requires a string frameName.")
-			return
-		end
-		alphaOnEnter = tonumber(alphaOnEnter) or 1.0
-		alphaOnLeave = tonumber(alphaOnLeave) or 0.2
-		if alphaOnEnter < 0 or alphaOnEnter > 1 or alphaOnLeave < 0 or alphaOnLeave > 1 the
-			print(addon .. ": Alpha values must be between 0 and 1.")
-			return
-		end
-
-		-- Get the frame
-		local frame = _G[frameName]
-		if frame then
-			frame:SetAlpha(alphaOnLeave)
-			frame:SetScript("OnEnter", function(self)
-				self:SetAlpha(alphaOnEnter)
-			end)
-			frame:SetScript("OnLeave", function(self)
-				self:SetAlpha(alphaOnLeave)
-			end)
-		else
-			C_Timer.After(1, function() SasUI.Mouseover(frameName, alphaOnEnter, alphaOnLeave) end)
-			print(addon .. ": Frame " .. frameName .. " not found to add mouseover.")
-		end
-	end
-]]--
-
---[[	
-	-- Mouseover effect for UI frames with delayed fade
-	function SasUI.Mouseover(frameName, alphaOnEnter, alphaOnLeave)
-		-- Validate inputs
-		if type(frameName) ~= "string" then
-			print(addon .. ": Mouseover requires a string frameName.")
-			return
-		end
-		alphaOnEnter = tonumber(alphaOnEnter) or 1.0
-		alphaOnLeave = tonumber(alphaOnLeave) or 0.2
-		if alphaOnEnter < 0 or alphaOnEnter > 1 or alphaOnLeave < 0 or alphaOnLeave > 1 then
-			print(addon .. ": Alpha values must be between 0 and 1.")
-			return
-		end
-
-		-- Get the frame
-		local frame = _G[frameName]
-		if frame then
-			frame:SetAlpha(alphaOnLeave)
-			frame:SetScript("OnEnter", function(self)
-				self:SetAlpha(alphaOnEnter)
-				self:SetScript("OnUpdate", nil) -- Clear any OnUpdate from OnLeave
-			end)
-			frame:SetScript("OnLeave", function(self)
-				-- Set OnUpdate to check if mouse is still over before fading
-				self:SetScript("OnUpdate", function(self)
-					if not self:IsMouseOver() then
-						self:SetScript("OnUpdate", nil)
-						self:SetAlpha(alphaOnLeave)
-					end
-				end)
-			end)
-		else
-			C_Timer.After(1, function() SasUI.Mouseover(frameName, alphaOnEnter, alphaOnLeave) end)
-			print(addon .. ": Frame " .. frameName .. " not found to add mouseover.")
-		end
-	end
-	
-	-- FadeIn/FadeOut buttons in a bar
-	function SasUI.BarMouseover(barName,alphaOnEnter, alphaOnLeave)
-		local bar = _G[barName]
-		
-		if not bar then
-			print("Bar " .. barName .. " not found.")
-			return
-		end
-		
-		bar:SetAlpha(alphaOnLeave)
-
-		bar:EnableMouse(true)
-		bar:HookScript("OnEnter", function()
-			bar:SetAlpha(alphaOnEnter)
-		end)
-		bar:HookScript("OnLeave", function()
-			bar:SetAlpha(alphaOnLeave)
-		end)
-
-		for i = 1, 12 do
-			local button = _G[barName.."Button"..i]
-			if button then
-				button:HookScript("OnEnter", function()
-					bar:SetAlpha(alphaOnEnter)
-				end)
-				button:HookScript("OnLeave", function()
-					bar:SetAlpha(alphaOnLeave)
-				end)
-			end
-		end
-	end
-]]--	
+    -- Create a frame to handle UI loading events
+    local buffFrameHandler = CreateFrame("Frame")
+    buffFrameHandler:RegisterEvent("PLAYER_LOGIN")
+    buffFrameHandler:RegisterEvent("ADDON_LOADED")
+    buffFrameHandler:SetScript("OnEvent", function(self, event, arg1)
+        if event == "PLAYER_LOGIN" or (event == "ADDON_LOADED" and arg1 == "Blizzard_UI") then
+            retryCount = 0 -- Reset retry count for event-driven attempts
+            C_Timer.After(0.2, CollapseBuffFrame)
+            -- Unregister ADDON_LOADED after Blizzard_UI loads to reduce overhead
+            if event == "ADDON_LOADED" and arg1 == "Blizzard_UI" then
+                self:UnregisterEvent("ADDON_LOADED")
+            end
+        end
+    end)
+end
+HideBuffFrameByDefault()

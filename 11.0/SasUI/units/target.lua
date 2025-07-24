@@ -29,7 +29,7 @@
 	-- Set up event handler
 	f:SetScript("OnEvent", function(self, event, ...)
 		if event == "PLAYER_ENTERING_WORLD" then
-			if cfg.move and cfg.move.enabled then
+			if cfg.move.enabled then
 				MoveTarget()
 			end
 			ApplyMouseover()
