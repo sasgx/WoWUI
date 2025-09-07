@@ -1,4 +1,4 @@
-## Interface: 110107, 50500, 40402, 30404, 11506
+## Interface: 110200, 50500, 11507
 ## Title: SasUI
 ## Author: Sas (Klaxi - Illidan/US-Horde)
 ## Notes: Custom UI based on blizzard with added mouseover function, art and chat/tooltip from Zork.
@@ -14,6 +14,8 @@ rTooltip.lua
 blizz.lua
 
 art\cp_bars.lua
+art\gw2_healthglobe.lua
+art\gw2_gryphons.lua
 
 units\player.lua
 units\target.lua

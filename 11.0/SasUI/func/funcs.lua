@@ -185,7 +185,7 @@
 	updateFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 	updateFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 	updateFrame:SetScript("OnEvent", function(self, event, key, state)
-		if event == "MODIFIER_STATE_CHANGED" and (key == "RALT") then
+		if event == "MODIFIER_STATE_CHANGED" and (key == "LALT") or (key == "RALT") then
 			for frameName, frame in pairs(registeredFrames) do
 				if IsValidFrame(frame) and frame.__faderConfig then
 					FrameHandler(frame)
@@ -224,7 +224,6 @@
 		end
 	end
 
-	-- Resize Blizzard frames
 	function SasUI.ResizeBlizzFrames(frameName, scale, addonName)
 		local frame = _G[frameName]
 		if frame then
@@ -240,10 +239,14 @@
 				end
 			end)
 
-			-- Hook SetScale to maintain desired scale
+			-- Hook SetScale to maintain desired scale with recursion guard
+			local isSettingScale = false
 			hooksecurefunc(frame, "SetScale", function()
+				if isSettingScale then return end -- Prevent recursion
 				if frame:GetScale() ~= scale then
+					isSettingScale = true
 					frame:SetScale(scale)
+					isSettingScale = false
 				end
 			end)
 		else
@@ -251,7 +254,6 @@
 			local eventFrame = CreateFrame("Frame")
 			eventFrame:RegisterEvent("ADDON_LOADED")
 			eventFrame:SetScript("OnEvent", function(self, event, loadedAddon)
-				-- Check if the frame exists after any addon loads
 				local newFrame = _G[frameName]
 				if newFrame then
 					if newFrame.SetScale then
@@ -265,40 +267,100 @@
 						end
 					end)
 
-					-- Hook SetScale
+					-- Hook SetScale with recursion guard
+					local isSettingScale = false
 					hooksecurefunc(newFrame, "SetScale", function()
+						if isSettingScale then return end
 						if newFrame:GetScale() ~= scale then
+							isSettingScale = true
 							newFrame:SetScale(scale)
+							isSettingScale = false
 						end
 					end)
 
 					-- Unregister event to clean up
 					self:UnregisterEvent("ADDON_LOADED")
 				elseif addonName and loadedAddon == addonName then
-					-- If specific addon was provided but frame still not found, warn and clean up
 					self:UnregisterEvent("ADDON_LOADED")
 				end
 			end)
 		end
 	end
+	-- -- Resize Blizzard frames
+	-- function SasUI.ResizeBlizzFrames(frameName, scale, addonName)
+		-- local frame = _G[frameName]
+		-- if frame then
+			-- -- Frame exists, apply scaling logic
+			-- if frame.SetScale then
+				-- frame:SetScale(scale)
+			-- end
+
+			-- -- Hook SetSize to detect size changes
+			-- hooksecurefunc(frame, "SetSize", function()
+				-- if frame.SetScale then
+					-- frame:SetScale(scale)
+				-- end
+			-- end)
+
+			-- -- Hook SetScale to maintain desired scale
+			-- hooksecurefunc(frame, "SetScale", function()
+				-- if frame:GetScale() ~= scale then
+					-- frame:SetScale(scale)
+				-- end
+			-- end)
+		-- else
+			-- -- Frame not found, set up event listener for ADDON_LOADED
+			-- local eventFrame = CreateFrame("Frame")
+			-- eventFrame:RegisterEvent("ADDON_LOADED")
+			-- eventFrame:SetScript("OnEvent", function(self, event, loadedAddon)
+				-- -- Check if the frame exists after any addon loads
+				-- local newFrame = _G[frameName]
+				-- if newFrame then
+					-- if newFrame.SetScale then
+						-- newFrame:SetScale(scale)
+					-- end
+
+					-- -- Hook SetSize
+					-- hooksecurefunc(newFrame, "SetSize", function()
+						-- if newFrame.SetScale then
+							-- newFrame:SetScale(scale)
+						-- end
+					-- end)
+
+					-- -- Hook SetScale
+					-- hooksecurefunc(newFrame, "SetScale", function()
+						-- if newFrame:GetScale() ~= scale then
+							-- newFrame:SetScale(scale)
+						-- end
+					-- end)
+
+					-- -- Unregister event to clean up
+					-- self:UnregisterEvent("ADDON_LOADED")
+				-- elseif addonName and loadedAddon == addonName then
+					-- -- If specific addon was provided but frame still not found, warn and clean up
+					-- self:UnregisterEvent("ADDON_LOADED")
+				-- end
+			-- end)
+		-- end
+	-- end
 
 	-- Set the textures to be class colored
 	local ClassColored = true
 
 	rRAID_CLASS_COLORS = {
-		["HUNTER"] = { r = 0.67, g = 0.83, b = 0.45 },
-		["WARLOCK"] = { r = 0.58, g = 0.51, b = 0.79 },
-		["PRIEST"] = { r = 1.0, g = 1.0, b = 1.0 },
-		["PALADIN"] = { r = 0.96, g = 0.55, b = 0.73 },
-		["MAGE"] = { r = 0.41, g = 0.8, b = 0.94 },
-		["ROGUE"] = { r = 1.0, g = 0.96, b = 0.41 },
-		["DRUID"] = { r = 1.0, g = 0.49, b = 0.04 },
-		["SHAMAN"] = { r = 0.0, g = 0.44, b = 0.87 },
-		["WARRIOR"] = { r = 0.78, g = 0.61, b = 0.43 },
 		["DEATHKNIGHT"] = { r = 0.77, g = 0.12, b = 0.23 },
-		["MONK"] = { r = 0.0, g = 1.0, b = 0.57 },
 		["DEMONHUNTER"] = { r = 0.64, g = 0.19, b = 0.79 },
+		["DRUID"] = { r = 1.0, g = 0.49, b = 0.04 },
 		["EVOKER"] = { r = 0.2, g = 0.58, b = 0.5 },
+		["HUNTER"] = { r = 0.67, g = 0.83, b = 0.45 },
+		["MAGE"] = { r = 0.41, g = 0.8, b = 0.94 },
+		["MONK"] = { r = 0.0, g = 1.0, b = 0.57 },
+		["PALADIN"] = { r = 0.96, g = 0.55, b = 0.73 },
+		["PRIEST"] = { r = 1.0, g = 1.0, b = 1.0 },
+		["ROGUE"] = { r = 1.0, g = 0.96, b = 0.41 },
+		["SHAMAN"] = { r = 0.0, g = 0.44, b = 0.87 },
+		["WARLOCK"] = { r = 0.58, g = 0.51, b = 0.79 },
+		["WARRIOR"] = { r = 0.78, g = 0.61, b = 0.43 },		
 	}
 
 	local cc = CUSTOM_CLASS_COLORS and CUSTOM_CLASS_COLORS[select(2, UnitClass("player"))] or rRAID_CLASS_COLORS[select(2, UnitClass("player"))] or { r=0.5, g=0.5, b=0.5 }
@@ -327,54 +389,54 @@
 	end
 	PaintTextures()
 	
--- Hide Blizzard buff frame by default until arrow is clicked
-local function HideBuffFrameByDefault()
-    local maxRetries = 5
-    local retryCount = 0
+	-- Hide Blizzard buff frame by default until arrow is clicked
+	local function HideBuffFrameByDefault()
+		local maxRetries = 5
+		local retryCount = 0
 
-    local function CollapseBuffFrame()
-        if BuffFrame and BuffFrame.CollapseAndExpandButton and BuffFrame.AuraContainer then
-            if not BuffFrame.isCollapsed then
-                -- Simulate a secure click to collapse the buff frame using Blizzard's logic
-                BuffFrame.CollapseAndExpandButton:Click()
-                -- Check if collapse worked after a short delay
-                C_Timer.After(0.5, function()
-                    if BuffFrame and not BuffFrame.isCollapsed and retryCount < maxRetries then
-                        retryCount = retryCount + 1
-                        CollapseBuffFrame()
-                    end
-                end)
-            end
-            -- Hook the CollapseAndExpandButton's OnClick to debug toggle behavior
-            if not BuffFrame.CollapseAndExpandButton.__sasUIHooked then
-                hooksecurefunc(BuffFrame.CollapseAndExpandButton, "OnClick", function(self)
-                    print("BuffFrame arrow clicked, isCollapsed:", BuffFrame.isCollapsed, "AuraContainer visible:", BuffFrame.AuraContainer:IsVisible())
-                end)
-                BuffFrame.CollapseAndExpandButton.__sasUIHooked = true
-            end
-        elseif retryCount < maxRetries then
-            -- Retry after a delay if BuffFrame or its components aren't ready
-            retryCount = retryCount + 1
-            C_Timer.After(2, CollapseBuffFrame)
-        end
-    end
+		local function CollapseBuffFrame()
+			if BuffFrame and BuffFrame.CollapseAndExpandButton and BuffFrame.AuraContainer then
+				if not BuffFrame.isCollapsed then
+					-- Simulate a secure click to collapse the buff frame using Blizzard's logic
+					BuffFrame.CollapseAndExpandButton:Click()
+					-- Check if collapse worked after a short delay
+					C_Timer.After(0.5, function()
+						if BuffFrame and not BuffFrame.isCollapsed and retryCount < maxRetries then
+							retryCount = retryCount + 1
+							CollapseBuffFrame()
+						end
+					end)
+				end
+				-- Hook the CollapseAndExpandButton's OnClick to debug toggle behavior
+				if not BuffFrame.CollapseAndExpandButton.__sasUIHooked then
+					hooksecurefunc(BuffFrame.CollapseAndExpandButton, "OnClick", function(self)
+						print("BuffFrame arrow clicked, isCollapsed:", BuffFrame.isCollapsed, "AuraContainer visible:", BuffFrame.AuraContainer:IsVisible())
+					end)
+					BuffFrame.CollapseAndExpandButton.__sasUIHooked = true
+				end
+			elseif retryCount < maxRetries then
+				-- Retry after a delay if BuffFrame or its components aren't ready
+				retryCount = retryCount + 1
+				C_Timer.After(2, CollapseBuffFrame)
+			end
+		end
 
-    -- Run on initial load with a delay to ensure UI is ready
-    C_Timer.After(0.2, CollapseBuffFrame)
+		-- Run on initial load with a delay to ensure UI is ready
+		C_Timer.After(0.2, CollapseBuffFrame)
 
-    -- Create a frame to handle UI loading events
-    local buffFrameHandler = CreateFrame("Frame")
-    buffFrameHandler:RegisterEvent("PLAYER_LOGIN")
-    buffFrameHandler:RegisterEvent("ADDON_LOADED")
-    buffFrameHandler:SetScript("OnEvent", function(self, event, arg1)
-        if event == "PLAYER_LOGIN" or (event == "ADDON_LOADED" and arg1 == "Blizzard_UI") then
-            retryCount = 0 -- Reset retry count for event-driven attempts
-            C_Timer.After(0.2, CollapseBuffFrame)
-            -- Unregister ADDON_LOADED after Blizzard_UI loads to reduce overhead
-            if event == "ADDON_LOADED" and arg1 == "Blizzard_UI" then
-                self:UnregisterEvent("ADDON_LOADED")
-            end
-        end
-    end)
-end
-HideBuffFrameByDefault()
+		-- Create a frame to handle UI loading events
+		local buffFrameHandler = CreateFrame("Frame")
+		buffFrameHandler:RegisterEvent("PLAYER_LOGIN")
+		buffFrameHandler:RegisterEvent("ADDON_LOADED")
+		buffFrameHandler:SetScript("OnEvent", function(self, event, arg1)
+			if event == "PLAYER_LOGIN" or (event == "ADDON_LOADED" and arg1 == "Blizzard_UI") then
+				retryCount = 0 -- Reset retry count for event-driven attempts
+				C_Timer.After(0.2, CollapseBuffFrame)
+				-- Unregister ADDON_LOADED after Blizzard_UI loads to reduce overhead
+				if event == "ADDON_LOADED" and arg1 == "Blizzard_UI" then
+					self:UnregisterEvent("ADDON_LOADED")
+				end
+			end
+		end)
+	end
+	HideBuffFrameByDefault()

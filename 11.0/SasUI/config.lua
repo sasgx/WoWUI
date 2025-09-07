@@ -79,8 +79,8 @@
 			af = UIParent,
 			a1 = "BOTTOM",
 			a2 = "BOTTOM",
-			x = -310,
-			y = 200,		
+			x = -220,
+			y = 180,		
 		},
 		pet = {
 			fadeIn = 0,
@@ -96,7 +96,7 @@
 		fadeOut = 0,
 		combatFade = false,
 		move = {
-			enabled = true,
+			enabled = false,
 			af = "PlayerFrame",
 			a1 = "LEFT",
 			a2 = "RIGHT",
@@ -116,6 +116,7 @@
 			x = 0,
 			y = 200,
 		},
+		invert = false,
 	}
 	
 	-- Blizzard Frames ( Character Menu )
