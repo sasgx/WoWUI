@@ -3,6 +3,7 @@
 
 	--get some values from the namespace
 	local cfg = ns.cfg.player
+	local player = ns.SasUI
 
 	if not cfg.enable then return end
 
@@ -15,24 +16,24 @@
 	f:SetScript("OnEvent", function(self, event, ...)
 		if event == "PLAYER_ENTERING_WORLD" then
 			if C_AddOns.IsAddOnLoaded("GW2_UI") then 
-				ns.SasUI.Mouseover("GW2_PlayerFrame", cfg.fadeIn or 1, cfg.fadeOut or 0.2, cfg.combatFade)
-				ns.SasUI.Mouseover("GwDodgeBar", 0, 0)
-				ns.SasUI.Mouseover("GwSkyridingBar", 0, 0)
-				ns.SasUI.Mouseover("GwPlayerPowerBar", 0, 0, 1)
-				ns.SasUI.Mouseover("GwPlayerPowerBarDecay", 0, 0, 1)
+				player.Mouseover("GW2_PlayerFrame", cfg.fadeIn or 1, cfg.fadeOut or 0.2, cfg.combatFade)
+				player.Mouseover("GwDodgeBar", 0, 0)
+				player.Mouseover("GwSkyridingBar", 0, 0)
+				player.Mouseover("GwPlayerPowerBar", 0, 0, 1)
+				player.Mouseover("GwPlayerPowerBarDecay", 0, 0, 1)
 				
-				ns.SasUI.Move("GW2_PlayerFrame", cfg.move.a1, cfg.move.af, cfg.move.a2, cfg.move.x, cfg.move.y)
+				player.Move("GW2_PlayerFrame", cfg.move.a1, cfg.move.af, cfg.move.a2, cfg.move.x, cfg.move.y)
 			else
-				ns.SasUI.Mouseover("PlayerFrame", cfg.fadeIn or 1, cfg.fadeOut or 0.2, cfg.combatFade)
-				ns.SasUI.Mouseover("PetFrame", cfg.pet.fadeIn or 0, cfg.pet.fadeOut or 0, cfg.pet.combatFade)
+				player.Mouseover("PlayerFrame", cfg.fadeIn or 1, cfg.fadeOut or 0.2, cfg.combatFade)
+				player.Mouseover("PetFrame", cfg.pet.fadeIn or 0, cfg.pet.fadeOut or 0, cfg.pet.combatFade)
 				if cfg.move.enabled then
-					ns.SasUI.Move("PlayerFrame", cfg.move.a1, cfg.move.af, cfg.move.a2, cfg.move.x, cfg.move.y)
+					player.Move("PlayerFrame", cfg.move.a1, cfg.move.af, cfg.move.a2, cfg.move.x, cfg.move.y)
 				end
 				
 				if cfg.resource.enabled then
-					ns.SasUI.Mouseover("WarlockPowerFrame", 1, 0.2, cfg.resource.combatFade)
+					player.Mouseover("WarlockPowerFrame", 1, 0.2, cfg.resource.combatFade)
 					if cfg.resource.move.enabled then
-						ns.SasUI.Move("WarlockPowerFrame", cfg.move.a1, cfg.move.af, cfg.move.a2, cfg.move.x, cfg.move.y)						
+						player.Move("WarlockPowerFrame", cfg.move.a1, cfg.move.af, cfg.move.a2, cfg.move.x, cfg.move.y)						
 					end
 				end
 			end

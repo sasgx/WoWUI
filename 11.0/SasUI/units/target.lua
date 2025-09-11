@@ -1,8 +1,11 @@
 	-- art/target.lua
 	local addon, ns = ...
+	
+	if C_AddOns.IsAddOnLoaded("GW2_UI") then return end
 
 	-- Get config from namespace
 	local cfg = ns.cfg.target
+	local target = ns.SasUI
 
 	-- Exit if addon is disabled in config
 	if not cfg.enable then return end
@@ -14,11 +17,11 @@
 	local function ApplyMouseover()
 		local fadeIn = cfg.fadeIn or 1
 		local fadeOut = UnitIsDeadOrGhost("target") and 1 or (cfg.fadeOut or 0.2)
-		ns.SasUI.Mouseover("TargetFrame", fadeIn, fadeOut)
+		target.Mouseover("TargetFrame", fadeIn, fadeOut)
 	end
 	
 	local function MoveTarget()
-		ns.SasUI.Move("TargetFrame", cfg.move.a1, cfg.move.af, cfg.move.a2, cfg.move.x, cfg.move.y) 
+		target.Move("TargetFrame", cfg.move.a1, cfg.move.af, cfg.move.a2, cfg.move.x, cfg.move.y) 
 	end
 	
 	-- Register events

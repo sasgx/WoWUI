@@ -2,10 +2,10 @@
 	local addon, ns = ...
 
 	if C_AddOns.IsAddOnLoaded("GW2_UI") then return end
-	if C_AddOns.IsAddOnLoaded("BetterBlizzFrames") then return end
 	
 	-- Get config from namespace
 	local cfg = ns.cfg.party
+	local party = ns.SasUI
 	
 	-- Exit if addon is disabled in config
 	if not cfg.enable then return end
@@ -19,9 +19,13 @@
 	-- Set up an event handler	
 	f:SetScript("OnEvent", function(self, event, ...)
 		if event == "PLAYER_ENTERING_WORLD" or event == "GROUP_JOINED" or event == "GROUP_ROSTER_UPDATE" then
-			ns.SasUI.Mouseover("CompactRaidFrameManager",1,0)
+		
+			if not C_AddOns.IsAddOnLoaded("BetterBlizzFrames") then
+				party.Mouseover("CompactRaidFrameManager",1,0)
+			end
+			
 			if cfg.move and cfg.move.enabled then
-				ns.SasUI.Move("PartyFrame", cfg.move.a1, cfg.move.af, cfg.move.a2, cfg.move.x, cfg.move.y)
+				party.Move("PartyFrame", cfg.move.a1, cfg.move.af, cfg.move.a2, cfg.move.x, cfg.move.y)
 			end
 			
 			if cfg.invert then

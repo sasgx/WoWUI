@@ -5,11 +5,12 @@
 	local cfg = {}
 	ns.cfg = cfg
 	
-	-- ConsolePort Bars
+	-- art\cp_bars.lua
 	cfg.cp_bars = {
 		enable = false,
 	}
-	-- Blizzard Bars
+	
+	-- units\bars.lua
 	cfg.bars = {
 		enable = true,
 		hide = {
@@ -59,7 +60,7 @@
 		}
 	}
 	
-	-- Blizzard PlayerFrame
+	-- units\player.lua
 	cfg.player = {
 		enable = true,
 		fadeIn = 1,
@@ -92,7 +93,7 @@
 		},
 	}
 	
-	-- Blizzard TargetFrame
+	-- units\target.lua
 	cfg.target = {
 		enable = false,
 		fadeIn = 1,
@@ -108,7 +109,7 @@
 		},
 	}
 	
-	-- Blizzard PartyFrame
+	-- units\party.lua
 	cfg.party = {
 		enable = false,
 		move = {
@@ -122,7 +123,13 @@
 		invert = false,
 	}
 	
-	-- Blizzard Frames ( Character Menu )
+	-- blizz.lua
 	cfg.blizz = {
 		enable = true,
 	}
+	
+	-- PaintUI.lua
+	cfg.paint = {
+		enable = true,
+		ClassColored = true,
+	},

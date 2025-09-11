@@ -1,5 +1,13 @@
+	--get the addon namespace
+	local addon, ns = ...
+
+	--get some values from the namespace
+	local cfg = ns.cfg.paint
+	
+	if not cfg.enable then end
+	
 	-- Set the textures to be class colored
-	local ClassColored = true
+	local ClassColored = cfg.ClassColored
 
 	rRAID_CLASS_COLORS = {
 		["DEATHKNIGHT"] = { r = 0.77, g = 0.12, b = 0.23 },
