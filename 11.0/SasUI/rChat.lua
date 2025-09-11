@@ -4,6 +4,8 @@
 	-----------------------------
 	-- Variables
 	-----------------------------
+	
+	if C_AddOns.IsAddOnLoaded("GW2_UI") then return end
 
 	local A, L = ...
 

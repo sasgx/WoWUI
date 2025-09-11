@@ -27,7 +27,14 @@
 				ns.SasUI.Mouseover("PetFrame", cfg.pet.fadeIn or 0, cfg.pet.fadeOut or 0, cfg.pet.combatFade)
 				if cfg.move.enabled then
 					ns.SasUI.Move("PlayerFrame", cfg.move.a1, cfg.move.af, cfg.move.a2, cfg.move.x, cfg.move.y)
-				end			
+				end
+				
+				if cfg.resource.enabled then
+					ns.SasUI.Mouseover("WarlockPowerFrame", 1, 0.2, cfg.resource.combatFade)
+					if cfg.resource.move.enabled then
+						ns.SasUI.Move("WarlockPowerFrame", cfg.move.a1, cfg.move.af, cfg.move.a2, cfg.move.x, cfg.move.y)						
+					end
+				end
 			end
 
 		end

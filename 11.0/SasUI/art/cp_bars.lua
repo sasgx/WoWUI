@@ -6,13 +6,6 @@
 	if not C_AddOns.IsAddOnLoaded("ConsolePort_Bar") then return end
 	if not cfg.enable then return end
 	
-	-- Function to set up pet ring fading behavior
-	local function setupPetRingFading()
-		if UnitExists("pet") then
-			ns.SasUI.Mouseover("ConsolePortBarPetRing", cfg.petRing.fadeIn or 1, cfg.petRing.fadeOut or 0, cfg.petRing.combatFade)
-		end
-	end
-	
 	-- Register for the ADDON_LOADED event to initialize
 	local f = CreateFrame("Frame")
 	f:RegisterEvent("ADDON_LOADED")
@@ -56,11 +49,6 @@
 				end
 			end
 			setupFrames()
-		elseif event == "UNIT_PET" and arg1 == "player" then
-			-- Handle Warlock pet summon detection
-			setupPetRingFading()
-		elseif event == "PLAYER_ENTERING_WORLD" then
-			setupPetRingFading()
 		end
 		-- Unregister event after loading
 		self:UnregisterEvent("ADDON_LOADED")

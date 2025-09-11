@@ -2,8 +2,7 @@
 	local addon, ns = ...
 
 	if C_AddOns.IsAddOnLoaded("GW2_UI") then return end
-	
-	local db = { backdropAlpha = 1.0 }  -- Adjustable alpha for backdrop visibility
+	if C_AddOns.IsAddOnLoaded("BetterBlizzFrames") then return end
 	
 	-- Get config from namespace
 	local cfg = ns.cfg.party
@@ -30,6 +29,8 @@
 			end
 		end
 	end)
+	
+	-- local db = { backdropAlpha = 1.0 }  -- Adjustable alpha for backdrop visibility
 
 	-- -- Function to set the font for the raid frame names and status text
 	-- local function setFont(frame)

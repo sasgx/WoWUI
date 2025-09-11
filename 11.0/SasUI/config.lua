@@ -7,12 +7,7 @@
 	
 	-- ConsolePort Bars
 	cfg.cp_bars = {
-		enable = true,
-		petRing = {
-			fadeIn = 1,
-			fadeOut = 0,
-			combatFade = true,
-		},
+		enable = false,
 	}
 	-- Blizzard Bars
 	cfg.bars = {
@@ -21,10 +16,6 @@
 			BagsBar = true,
 		},		
 		mouseover = {
-			-- BagsBar = {
-				-- fadeIn = 1,
-				-- fadeOut = 0,
-			-- },
 			xpacButton = {
 				fadeIn = 1,
 				fadeOut = 0,
@@ -87,11 +78,23 @@
 			fadeOut = 0,
 			combatFade = false,
 		},
+		resource = {
+			enabled = false,
+			combatFade = true,
+			move = {
+				enabled = false,
+				af = "TargetFrame",
+				a1 = "BOTTOM",
+				a2 = "BOTTOM",
+				x = 0,
+				y = 0,
+			},
+		},
 	}
 	
 	-- Blizzard TargetFrame
 	cfg.target = {
-		enable = true,
+		enable = false,
 		fadeIn = 1,
 		fadeOut = 0,
 		combatFade = false,
@@ -107,7 +110,7 @@
 	
 	-- Blizzard PartyFrame
 	cfg.party = {
-		enable = true,
+		enable = false,
 		move = {
 			enabled = false,
 			af = UIParent,

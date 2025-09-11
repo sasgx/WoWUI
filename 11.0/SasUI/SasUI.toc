@@ -6,7 +6,12 @@
 ## RequiredDeps:
 ## OptionalDeps: ConsolePort_Bar, GW2_UI
 
-func\funcs.lua
+func\blizzFrames.lua
+func\fader.lua
+func\invertBuffLayout.lua
+func\move.lua
+func\textures.lua
+
 config.lua
 
 rChat.lua
@@ -21,3 +26,5 @@ units\player.lua
 units\target.lua
 units\bars.lua
 units\party.lua
+
+PaintUI.lua
